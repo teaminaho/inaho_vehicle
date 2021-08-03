@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="serial_mbed" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyMbed"
+        respawn="true" respawn_delay="1" output="screen">
+        <param name="baud" value="115200"/>
+    </node>
+</launch>

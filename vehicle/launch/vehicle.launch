@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+  <node name="vehicle_controller" pkg="vehicle" type="vehicle_controller.py" respawn="true" />
+</launch>

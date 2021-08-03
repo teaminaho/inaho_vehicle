@@ -1,0 +1,122 @@
+version: "2.4"
+
+x-environment: &common-environment
+  PYTHONUNBUFFERED: 1
+
+x-roslog-environment: &roslog-environment
+  ROS_PYTHON_LOG_CONFIG_FILE: /python_logging.conf
+  ROSCONSOLE_CONFIG_FILE: /cpp_logging.conf
+  ROSCONSOLE_FORMAT: "${X_ROSCONSOLE_FORMAT:-${node}}/${X_ROSCONSOLE_FORMAT:-${logger}} [${X_ROSCONSOLE_FORMAT:-${severity}}] ${X_ROSCONSOLE_FORMAT:-${message}}"
+
+x-logging:
+  &default-logging
+  driver: "journald"
+  options:
+    tag: "{{.Name}}/{{.ID}}"
+
+services:
+  joystick:
+    build:
+        context: .
+        dockerfile: ./joystick/Dockerfile
+    depends_on:
+      - ros_master
+    network_mode: "host"
+    restart: always
+    device_cgroup_rules:
+      - "c 10:* rmw"
+      - "c 234:* rmw"
+      - "c 235:* rmw"
+      - "c 236:* rmw"
+      - "c 237:* rmw"
+      - "c 238:* rmw"
+      - "c 239:* rmw"
+      - "c 240:* rmw"
+      - "c 241:* rmw"
+      - "c 242:* rmw"
+      - "c 243:* rmw"
+      - "c 244:* rmw"
+      - "c 245:* rmw"
+      - "c 246:* rmw"
+      - "c 247:* rmw"
+      - "c 248:* rmw"
+      - "c 249:* rmw"
+      - "c 250:* rmw"
+      - "c 251:* rmw"
+      - "c 252:* rmw"
+      - "c 253:* rmw"
+      - "c 254:* rmw"
+      - "c 13:* rmw"
+      - "c 15:* rmw"
+    environment:
+      <<: *common-environment
+      <<: *roslog-environment
+      JS_TYPE: generic
+      JS_CONT_PUBLISH_RATE_HZ: 20
+      JS_CONT_RECEIVE_BUFFER_SIZE: 4
+      JS_CONT_VELOCITY_BUFFER_SIZE: 4
+      JS_CONT_VELOCITY_LIMIT: 0.40
+      JS_CONT_DASH_VELOCITY_LIMIT: 0.80
+      JS_CONT_ANGULAR_LIMIT: 0.20
+      JS_CONT_LIN_ACCEL_LIMIT: 10.0
+      JS_CONT_ANG_ACCEL_LIMIT: 10.0
+      JS_CONT_UNLOCK_BUTTON_INDEX: 4
+      JS_CONT_DASH_BUTTON_INDEX: 105
+      JS_CONT_STICK_LIN_VEL_INDEX: 1
+      JS_CONT_STICK_ANG_VEL_INDEX: 0
+      JS_CONT_STICK_X_INVERT: 0
+      JS_CONT_STICK_Y_INVERT: 0
+    volumes:
+      - type: bind
+        source: /dev
+        target: /dev
+        read_only: true
+      - "./config/ros_python_logging.conf:/python_logging.conf:ro"
+    logging: *default-logging
+
+  vehicle:
+    build:
+        context: .
+        dockerfile: ./vehicle/Dockerfile
+    depends_on:
+      - ros_master
+    network_mode: "host"
+    environment:
+      <<: *common-environment
+      <<: *roslog-environment
+    restart: always
+    volumes:
+      - "./config/ros_python_logging.conf:/python_logging.conf:ro"
+    logging: *default-logging
+
+  mbed:
+    build:
+        context: .
+        dockerfile: ./mbed/Dockerfile
+    depends_on:
+      - ros_master
+    network_mode: "host"
+    environment:
+      <<: *common-environment
+      <<: *roslog-environment
+    restart: always
+    volumes:
+      - type: bind
+        source: /dev
+        target: /dev
+        read_only: true
+      - "./config/ros_python_logging.conf:/python_logging.conf:ro"
+    device_cgroup_rules:
+      - "c 166:* rmw"
+      - "c 188:* rmw"
+    logging: *default-logging
+
+  ros_master:
+    image: ros:noetic-ros-core
+    hostname: localhost
+    command: stdbuf -o L roscore
+    restart: always
+    network_mode: "host"
+    ports:
+      - "11311:11311"
+    logging: *default-logging
